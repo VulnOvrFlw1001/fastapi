@@ -60,10 +60,9 @@ def get_posts():
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
 def create_posts(post: Post):
-    post_dict = post.dict()
-    post_dict['id'] = randrange(0, 100000000)
-    my_posts.append(post_dict)
-    return {"data": post_dict}
+    cursor.execute("""INSERT INTO posts (title, content, published) VALUES (%s, %s, %s) RETURNING * """, (posts.title, post.content, post.published))
+    new_post = cursor.fetchone()
+    return {"data": "created post"}
 
 @app.get("/posts/{id}")
 def get_post(id: int):
@@ -93,4 +92,4 @@ def update_post(id: int, post: Post):
     my_posts[index] = post_dict
     return {"data": post_dict}
 
-#4:04
+#4:11
