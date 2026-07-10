@@ -5,7 +5,7 @@
 #uvicorn main:app --reload
 
 
-from fastapi import FastAPI, Response, status, HTTPException
+from fastapi import FastAPI, Response, status, HTTPException, Depends
 from fastapi.params import Body
 from pydantic import BaseModel
 from typing import Optional
@@ -13,9 +13,20 @@ from random import randrange
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import time
+from . import models
+from .database import SessionLocal, engine
+from sqlalchemy.orm import Session
 
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 class Post(BaseModel):
     title: str
@@ -51,6 +62,10 @@ def find_index_post(id):
 @app.get("/")
 def root():
     return {"message": "hello!!!"}
+
+@app.get("/sqlalchemy")
+def test_posts(db : Session = Depends(get_db)):
+    return {"stauts": "success"}
 
 @app.get("/posts")
 def get_posts():
@@ -94,4 +109,4 @@ def update_post(id: int, post: Post):
                             detail=f"post with id: {id} does not exist")
     return {"data": updated_post}
 
-#4:44  
+#4:54
