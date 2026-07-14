@@ -10,10 +10,13 @@ router = APIRouter(
 )
 
 @router.get("/", response_model=List[schemas.Post])
-def get_posts(db: Session = Depends(get_db), user_id: int = Depends(oauth2.get_current_user)):
+def get_posts(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     #cursor.execute("""SELECT * FROM posts """)
     #posts = cursor.fetchall()
-    posts = db.query(models.Post).all()
+    print(current_user.id)
+    posts = db.query(models.Post).filter(models.Post.owner_id == current_user.id).all()
+
+    print(posts)
     return posts
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.Post)
@@ -50,7 +53,7 @@ def delete_post(id: int, db: Session = Depends(get_db), current_user: int = Depe
     if post() == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id: {id} does not exist")
     
-    if post.owner_id != oauth2.get_current_user.id:
+    if post.owner_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to perform the action")
 
     post_query.delete(synchronize_session=False)
@@ -71,7 +74,7 @@ def update_post(id: int, updated_post: schemas.PostCreate, db: Session = Depends
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"post with id: {id} does not exist")
     
-    if post.owner_id != oauth2.get_current_user.id:
+    if post.owner_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to perform this action")
 
     post_query.update(updated_post.dict(), synchronize_session=False)
